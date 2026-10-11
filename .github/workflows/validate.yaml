@@ -49,6 +49,15 @@ jobs:
             git status --short -- dist >&2
             exit 1
           fi
+      - name: No removed ha-formfield element in the bundle
+        # Home Assistant 2026.11 removed ha-formfield; the build renames it to
+        # the fork's bubble-formfield (build/formfield-loader.cjs). The
+        # --ha-formfield-* CSS custom properties are intentionally kept.
+        run: |
+          if grep -lP '(?<![\w-])ha-formfield(?![\w-])' dist/*.js; then
+            echo "dist still references the removed ha-formfield element" >&2
+            exit 1
+          fi
       - name: Enforce the startup bundle budget
         # The entry file is what every client parses at startup: 1,073,092
         # bytes at upstream v3.4.1, 736,165 with the editor loaded on demand.
