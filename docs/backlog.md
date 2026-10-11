@@ -21,7 +21,7 @@ calendar (2), and one horizontal-buttons-stack; no cover, climate, or select; no
 
 | Item | Evidence | Effect | Fix |
 |---|---|---|---|
-| `ha-formfield` removed from the frontend | home-assistant/frontend#54200, merged 2026-10-09; absent on `dev`, present in 20260930.2. 118 uses in 14 files under `src/`, all editor code | Editor toggles lose their labels once Home Assistant 2026.11 ships; dashboards are unaffected | A fork-owned `bubble-formfield` element (label plus slot) and a tag rename, or a guarded fallback registration. Defining `ha-formfield` unconditionally is not safe on 2026.10, where the frontend still registers it lazily |
+| **Done** (`decisions.md`): `ha-formfield` removed from the frontend | home-assistant/frontend#54200, merged 2026-10-09; absent on `dev`, present in 20260930.2. 118 uses in 14 files under `src/`, all editor code | Editor toggles lose their labels once Home Assistant 2026.11 ships; dashboards are unaffected | A fork-owned `bubble-formfield` element (label plus slot) and a tag rename, or a guarded fallback registration. Defining `ha-formfield` unconditionally is not safe on 2026.10, where the frontend still registers it lazily |
 | `ha-entity-picker` reads `hass` from Lit context since frontend#52833 | Upstream #2639 (maintainer could not reproduce); `editor/bubble-card-editor.js`, `modules/module-editor.js` | Entity field can be missing in the editor. Root cause is a hypothesis | Fall back to `ha-selector` with an entity selector |
 | `mwc-icon-button`, `mwc-button` no longer registered | `sub-button/editor/sectioned.js`, `sub-button/editor/utils.js`, `modules/editor.js`, `modules/store.js` | Unstyled buttons in the editor; clicks work | `ha-icon-button`, `ha-button` |
 

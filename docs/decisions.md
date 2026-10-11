@@ -117,3 +117,39 @@ is carried across upstream syncs.
 never reaches a client. Bumping them here would put the lockfile in conflict with
 every upstream sync. They still run in CI, so they remain a supply-chain exposure
 of the build itself; that is accepted and revisited when upstream updates them.
+
+## 2026-10-11: ha-formfield is replaced at build time, not in the templates
+
+Home Assistant's frontend removed `ha-formfield` in home-assistant/frontend#54200
+(merged 2026-10-09; present in 20260930.2, absent on `dev`), so it first
+disappears with Home Assistant 2026.11. Bubble Card's editors use it 118 times in
+14 files. Without it the tag becomes an unknown inline element: labels passed as
+`label="..."` vanish, the separate label element drops below its switch, and
+clicking a label stops toggling the switch. Dashboards are unaffected; it is all
+editor and migration-dialog code.
+
+The fork ships `bubble-formfield` (`src/fork/bubble-formfield.js`), a plain-DOM
+element that reproduces `ha-formfield` at 20260930.2: a centered row with a gap,
+the `label` property or `label` slot, and a label click that toggles the slotted
+control. `build/formfield-loader.cjs` renames the tag in every source module and
+stylesheet as webpack bundles them, and leaves the `--ha-formfield-*` custom
+properties alone so theme overrides still apply. CI fails if the tag reaches
+`dist/`.
+
+Rejected:
+- Editing the 59 templates to put the label inside `ha-switch`, which is how the
+  frontend itself migrated. Both 20260930.2 and `dev` build `ha-switch` on the
+  Web Awesome switch, so it would work, but it rewrites 14 upstream files that
+  upstream must change for the same reason, so every sync would conflict.
+- Registering a polyfill under the name `ha-formfield`. On 2026.10 the frontend
+  registers that name lazily; a fork registration that wins the race makes the
+  frontend's own `customElements.define` throw.
+
+When upstream migrates off `ha-formfield`, the loader finds nothing to rename and
+the element goes unused; both can then be deleted.
+
+Verified with unit tests for the rename and the label click, and in a browser
+against the built `dist/`: `bubble-formfield` registered with `ha-formfield`
+absent, attribute and property labels render, a label click toggles the
+control, and a separate label element stays on the control's row. Not yet
+verified inside the real editor on Home Assistant 2026.11.
