@@ -49,24 +49,26 @@ jobs:
             git status --short -- dist >&2
             exit 1
           fi
-      - name: No removed ha-formfield element in the bundle
-        # Home Assistant 2026.11 removed ha-formfield; the build renames it to
-        # the fork's bubble-formfield (build/formfield-loader.cjs). The
-        # --ha-formfield-* CSS custom properties are intentionally kept.
+      - name: No removed or unregistered elements in the bundle
+        # build/formfield-loader.cjs renames ha-formfield (removed in Home
+        # Assistant 2026.11) to the fork's bubble-formfield, and mwc-button /
+        # mwc-icon-button (no longer registered) to ha-button / ha-icon-button.
+        # The --ha-formfield-* CSS custom properties are intentionally kept.
         run: |
-          if grep -lP '(?<![\w-])ha-formfield(?![\w-])' dist/*.js; then
-            echo "dist still references the removed ha-formfield element" >&2
+          if grep -lP '(?<![\w-])(ha-formfield|mwc-button|mwc-icon-button)(?![\w-])' dist/*.js; then
+            echo "dist still references an element Home Assistant no longer provides" >&2
             exit 1
           fi
       - name: Enforce the startup bundle budget
         # The entry file is what every client parses at startup: 1,073,092
         # bytes at upstream v3.4.1, 736,165 with the editor loaded on demand,
-        # 696,988 with the stylesheets minified. See docs/decisions.md.
+        # 696,988 with the stylesheets minified, 585,318 with js-yaml and the
+        # pop-up onboarding loaded on demand. See docs/decisions.md.
         run: |
           SIZE="$(wc -c < dist/bubble-card.js)"
           echo "dist/bubble-card.js is ${SIZE} bytes"
-          if [ "$SIZE" -gt 737280 ]; then
-            echo "dist/bubble-card.js exceeds the 720 KiB budget" >&2
+          if [ "$SIZE" -gt 614400 ]; then
+            echo "dist/bubble-card.js exceeds the 600 KiB budget" >&2
             exit 1
           fi
 

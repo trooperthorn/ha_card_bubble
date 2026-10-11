@@ -6,8 +6,8 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const require = createRequire(import.meta.url);
-const { renameFormfield } = require('./formfield-loader.cjs');
-const TAG = /(?<![\w-])ha-formfield(?![\w-])/;
+const { renameFormfield, renameElements, RENAMED_ELEMENTS } = require('./formfield-loader.cjs');
+const TAG = new RegExp(String.raw`(?<![\w-])(${RENAMED_ELEMENTS.join('|')})(?![\w-])`);
 
 describe('ha-formfield build-time rename', () => {
     test('renames opening and closing tags, attributes untouched', () => {
@@ -27,7 +27,15 @@ describe('ha-formfield build-time rename', () => {
         expect(renameFormfield(source)).toBe(source);
     });
 
-    test('leaves no ha-formfield tag in any source module or stylesheet', () => {
+    test('renames the unregistered mwc buttons to their ha-* equivalents', () => {
+        expect(renameElements('<mwc-icon-button slot="trigger" title="x"><ha-icon icon="mdi:sort"></ha-icon></mwc-icon-button>'))
+            .toBe('<ha-icon-button slot="trigger" title="x"><ha-icon icon="mdi:sort"></ha-icon></ha-icon-button>');
+        expect(renameElements('<mwc-button @click=${f}>Retry</mwc-button>'))
+            .toBe('<ha-button @click=${f}>Retry</ha-button>');
+        expect(renameElements('mwc-icon-button ha-icon {')).toBe('ha-icon-button ha-icon {');
+    });
+
+    test('leaves no renamed tag in any source module or stylesheet', () => {
         const root = join(dirname(fileURLToPath(import.meta.url)), '..', 'src');
         const remaining = [];
         const walk = (dir) => {

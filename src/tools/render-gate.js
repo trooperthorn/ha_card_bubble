@@ -1,5 +1,6 @@
 import { monotonicNow } from './monotonic-time.js';
 import { resolveStateContent, stateContentHasClock } from './state-content.js';
+import { isIdleClosedStandalonePopUp } from '../fork/closed-popup-gate.js';
 
 // Home Assistant replaces the whole `hass` object whenever any entity in the
 // installation changes, so every card is asked to render on every state change
@@ -211,7 +212,8 @@ function gateFor(element) {
 export function shouldSkipRender(element) {
     if (!canProxy || !element?.config) return false;
     // The pop-up shell drives its own open sequence off this same path.
-    if (element.config.card_type === 'pop-up') return false;
+    // Fork patch: a closed, untriggered standalone pop-up does skip.
+    if (element.config.card_type === 'pop-up') return isIdleClosedStandalonePopUp(element);
     if (element.editor || element.detectedEditor || element._preview) return false;
 
     const hass = element._hass;

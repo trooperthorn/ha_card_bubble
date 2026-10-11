@@ -19,6 +19,7 @@ import { maybeShowMigrationNotice } from './cards/pop-up/migration.js';
 import { registerForIconRefresh, unregisterForIconRefresh } from './tools/icon.js';
 import { monotonicNow } from './tools/monotonic-time.js';
 import { loadBubbleCardEditor } from './editor/load-editor.js';
+import { skipClockDrivenTick } from './fork/clock-render-throttle.js';
 
 import { cleanupPopUp, handlePopUp } from './cards/pop-up/index.js';
 import { handleButton } from './cards/button/index.js';
@@ -398,7 +399,7 @@ class BubbleCard extends HTMLElement {
     // Nothing this card was built from has moved, so rendering it again would
     // reproduce what is already on screen. The fresh hass is stored above, so
     // any later render still reads the current state.
-    if (shouldSkipRender(this)) {
+    if (shouldSkipRender(this) || skipClockDrivenTick(this, monotonicNow())) {
       return;
     }
 
