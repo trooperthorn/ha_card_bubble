@@ -14,6 +14,7 @@ import {
 } from '../../tools/utils.js';
 import { resolveTemplate } from '../../tools/render-template.js';
 import { isTemplate } from '../../tools/jinja.js';
+import { escapeText } from '../../fork/escape-text.js';
 import {
     HIDDEN_ZERO_ATTRIBUTES_DOMAINS,
     TIMESTAMP_CONTENTS,
@@ -151,11 +152,14 @@ export function renderStateLine(context, entityId, content, options = {}) {
     const parts = [];
     for (const item of content) {
         const text = renderStateItem(context, entityId, item, options);
-        if (text) parts.push(text);
+        // Fork patch (ha_card_bubble): the line is written as markup; escape
+        // entity text, not template results (already escaped) or the name
+        // (escaped where it was resolved). See fork/escape-text.js.
+        if (text) parts.push(isTemplate(item) || item === 'name' ? text : escapeText(text));
     }
     if (parts.length === 0) {
         const state = context._hass?.states?.[entityId];
-        if (state) parts.push(isTimerEntity(entityId) ? timerText(context._hass, state) : context._hass.formatEntityState(state));
+        if (state) parts.push(escapeText(isTimerEntity(entityId) ? timerText(context._hass, state) : context._hass.formatEntityState(state)));
     }
     return parts;
 }

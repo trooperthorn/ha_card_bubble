@@ -7,6 +7,7 @@ import { resolveTemplate } from "../../tools/render-template.js";
 import { isTemplate } from "../../tools/jinja.js";
 import { resolveStateContent } from "../../tools/state-content.js";
 import { renderStateLine } from "../base-card/state-line.js";
+import { escapeText } from "../../fork/escape-text.js";
 
 // Get entity picture for sub-button
 // Returns empty if force_icon is set or if an icon is explicitly configured for the sub-button
@@ -36,7 +37,8 @@ export function getSubButtonOptions(context, subButton, index) {
     // A templated name renders what the template says, with the sub-button's
     // own entity as `entity`, and is written as markup by the scrolling text.
     name: (isTemplate(subButton.name) ? resolveTemplate(context, subButton.name, entity, true) : subButton.name)
-      ?? getAttribute(context, "friendly_name", entity) ?? '',
+      // Fork patch (ha_card_bubble): see fork/escape-text.js.
+      ?? escapeText(getAttribute(context, "friendly_name", entity)) ?? '',
     attributeType: subButton.attribute ?? '',
     attribute: getAttribute(context, subButton.attribute ?? '', entity),
     isOn: isStateOn(context, entity),
