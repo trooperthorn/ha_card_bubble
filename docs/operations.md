@@ -18,6 +18,15 @@ second file to load throws and whichever loaded first wins.
 
 Dashboards need no changes: cards keep `type: custom:bubble-card`.
 
+Do not open the dashboard between removing upstream and finishing the download.
+Home Assistant serves `/hacsfiles` 404 responses with the same 31-day
+`Cache-Control` as real files (`http/static.py` sets the header before the file is
+opened), so a browser that requests `bubble-card.js` while it is missing caches the
+"not found" for that exact URL, and every Bubble card shows "Configuration error"
+even after the file arrives. If that happens, change the resource URL once (for
+example append `&v=2` under Settings -> Dashboards -> Resources); every client then
+requests a new URL. Seen on 2026-10-11 during the first switch.
+
 ## Bubble Card Tools
 
 Install [Clooos/Bubble-Card-Tools](https://github.com/Clooos/Bubble-Card-Tools)
