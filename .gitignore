@@ -2,4 +2,4 @@
 /www
 .env
 .DS_Store
-.vscode
+.vscode__pycache__/

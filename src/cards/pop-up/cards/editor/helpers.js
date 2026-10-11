@@ -1,4 +1,5 @@
 import { fireEvent } from '../../../../tools/utils.js';
+import { loadBubbleCardEditor } from '../../../../editor/load-editor.js';
 
 export function createEditorActions(context, rebuildCards) {
     const updateCards = (updater) => {
@@ -135,6 +136,9 @@ function _editCardDialog(context, index) {
     if (!context.config.cards?.[index]) return;
 
     const standaloneDialogOpener = _getStandaloneDialogOpener(context);
+    if (!standaloneDialogOpener && _canLoadEditorForOpener(context)) {
+        return _loadEditorThen(() => _editCardDialog(context, index));
+    }
     if (!standaloneDialogOpener) {
         console.warn('Bubble Card: standalone pop-up editor unavailable for nested card edit');
         return;
@@ -145,12 +149,32 @@ function _editCardDialog(context, index) {
 
 function _addCardDialog(context) {
     const standaloneDialogOpener = _getStandaloneDialogOpener(context);
+    if (!standaloneDialogOpener && _canLoadEditorForOpener(context)) {
+        return _loadEditorThen(() => _addCardDialog(context));
+    }
     if (!standaloneDialogOpener) {
         console.warn('Bubble Card: standalone pop-up editor unavailable for nested card creation');
         return;
     }
 
     return standaloneDialogOpener({ type: 'add' });
+}
+
+// Fork patch (ha_card_bubble): the editor is loaded on demand, so the transient
+// bridge element may not be registered yet when a nested card is edited from the
+// dashboard. When an opener exists the dialog still opens synchronously; only
+// the not-yet-loaded case waits for the editor chunk and then retries once
+// (after loading, the element is registered and this returns false).
+function _canLoadEditorForOpener(context) {
+    return context?.isConnected !== false
+        && typeof customElements !== 'undefined'
+        && !customElements.get?.('bubble-card-editor');
+}
+
+function _loadEditorThen(retry) {
+    return loadBubbleCardEditor().then(retry, (error) => {
+        console.warn('Bubble Card: failed to load the editor', error);
+    });
 }
 
 function _getStandaloneDialogOpener(context) {

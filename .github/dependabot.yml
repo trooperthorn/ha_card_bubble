@@ -1,0 +1,10 @@
+# npm is deliberately absent: upstream owns package.json and package-lock.json,
+# and fork-side dependency bumps would conflict on every upstream rebase. See
+# docs/decisions.md.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5

@@ -49,6 +49,22 @@ class EmitTranslationsPlugin {
 
 const plugins = [new EmitTranslationsPlugin()];
 
+// Fork patch (ha_card_bubble): emit ES modules so lazily loaded chunks (the
+// editor) are fetched with import() relative to import.meta.url, i.e. next to
+// bubble-card.js under /hacsfiles/<repo>/. The dashboard already loads the
+// resource as type "module". Chunk names carry a content hash because Home
+// Assistant serves /hacsfiles with a 31-day cache and the ?hacstag cache
+// buster only applies to the entry file; the fork changes chunks without
+// upstream's version changing, so a version-based name could go stale.
+const forkModuleOutput = {
+  module: true,
+  chunkFormat: 'module',
+  chunkLoading: 'import',
+  chunkFilename: 'bubble-card-chunk-[name].[contenthash:8].js',
+  uniqueName: 'ha_card_bubble',
+};
+const experiments = { outputModule: true };
+
 module.exports = [
   {
     mode: 'production',
@@ -60,7 +76,9 @@ module.exports = [
     },
     performance,
     plugins,
+    experiments,
     output: {
+      ...forkModuleOutput,
       path: path.resolve(__dirname, 'dist'),
       filename: '[name].js'
     }
@@ -78,7 +96,9 @@ module.exports = [
     },
     performance,
     plugins,
+    experiments,
     output: {
+      ...forkModuleOutput,
       path: process.env.HA_PATH || path.resolve(__dirname, 'www'),
       filename: '[name].js'
     }
