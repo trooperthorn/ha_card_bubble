@@ -13,6 +13,9 @@ jest.unstable_mockModule('../../tools/utils.js', () => ({
 jest.unstable_mockModule('./changes.js', () => ({
     onSliderChange: jest.fn(() => 42),
     updateEntity: jest.fn(),
+    // v3.4.1's create.js also imports updateSlider; the PR was written
+    // against an earlier base whose create.js did not.
+    updateSlider: jest.fn(),
 }));
 
 jest.unstable_mockModule('./drag-click.js', () => ({
