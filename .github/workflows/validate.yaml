@@ -60,13 +60,13 @@ jobs:
           fi
       - name: Enforce the startup bundle budget
         # The entry file is what every client parses at startup: 1,073,092
-        # bytes at upstream v3.4.1, 736,165 with the editor loaded on demand.
-        # See docs/decisions.md and docs/backlog.md.
+        # bytes at upstream v3.4.1, 736,165 with the editor loaded on demand,
+        # 696,988 with the stylesheets minified. See docs/decisions.md.
         run: |
           SIZE="$(wc -c < dist/bubble-card.js)"
           echo "dist/bubble-card.js is ${SIZE} bytes"
-          if [ "$SIZE" -gt 798720 ]; then
-            echo "dist/bubble-card.js exceeds the 780 KiB budget" >&2
+          if [ "$SIZE" -gt 737280 ]; then
+            echo "dist/bubble-card.js exceeds the 720 KiB budget" >&2
             exit 1
           fi
 
