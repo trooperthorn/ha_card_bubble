@@ -101,6 +101,21 @@ function refresh() {
     publish(measureContentInlineStart());
 }
 
+// Fork patch (ha_card_bubble, upstream #2641, fixed upstream but unreleased at
+// v3.4.1): a sidebar that collapses or is hidden by a kiosk tool can move the
+// panel without the ResizeObserver reporting it, leaving a stale inset and an
+// off-centre pop-up. Pop-ups call this as they open, before they touch any
+// style, so the layout read is clean and reflects the sidebar at that moment.
+// It also picks up a panel HA swapped since the last measurement. Drop at the
+// next upstream sync.
+export function refreshContentInset() {
+    if (typeof document === 'undefined') {
+        return false;
+    }
+    refresh();
+    return true;
+}
+
 // Idempotent, and cheap enough to call from every pop-up registration: that is
 // what makes a panel swap or a late-booting dashboard get picked up.
 export function startContentInsetSync() {
