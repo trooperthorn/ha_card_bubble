@@ -46,8 +46,10 @@ into `www/` (ignored). Commit the whole `dist/` folder; CI rejects drift.
 
 A merge to `main` is the only release path. `Release` reads the version from
 `package.json` through `.release.json`, checks that a fresh build reproduces the
-committed `dist/`, tags the commit `v<version>`, and publishes a release with a
-`SHA256SUMS` asset. `Prepare release` then opens a CalVer bump PR when release
+committed `dist/`, tags the commit `v<version>`, and publishes a release with **no
+assets**; the checksums of every file in `dist/` are in the release notes. HACS
+installs the whole `dist/` folder only when the release has no assets at all, so
+never attach a file to a release (`docs/decisions.md`). `Prepare release` then opens a CalVer bump PR when release
 paths changed since the last tag; it needs the release GitHub App (repository
 variable `RELEASE_AUTOMATION_CLIENT_ID`, secret `RELEASE_AUTOMATION_PRIVATE_KEY`).
 Without them it fails at its credential check, and a bump can be made by hand:

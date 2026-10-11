@@ -29,9 +29,10 @@ HACS installs a plugin from release assets only when an asset has exactly the
 downloads every file directly under `dist/` at the tag. Bubble Card already ships
 63 locale dictionaries next to the bundle, and the fork adds lazily loaded chunks,
 so a single-file asset would install a card that cannot load its other files.
-Releases therefore carry only a `SHA256SUMS` asset listing every shipped file, and
+Releases therefore carried only a `SHA256SUMS` asset listing every shipped file, and
 CI fails when the committed `dist/` differs from a fresh build or holds a file the
-build did not produce.
+build did not produce. **Superseded the same day; see "releases have no assets"
+below: the `SHA256SUMS` asset alone made HACS skip `dist/`.**
 
 ## 2026-10-11: the fork version lives in package.json; the card keeps upstream's
 
@@ -179,3 +180,22 @@ and after, once runs of whitespace are treated as one space (two multi-line
 Rejected: lightningcss or csso, which the research measured at about 14 KB more
 raw saving. Either is a dependency in upstream's `package.json` and lockfile, and
 every upstream sync would conflict on them.
+
+## 2026-10-11: releases have no assets (correction)
+
+The asset decision above read only half of HACS. `update_filenames` does pick the
+`dist/` folder when no asset is named `bubble-card.js`, but the download itself goes
+through `gather_files_to_download` (HACS `repositories/base.py`): when
+`should_try_releases` is true, which it is for any plugin installed from a tagged
+release, and that release has **any** assets, HACS downloads those assets and
+returns without looking at `dist/`. v2026.10.11.2 therefore installed exactly one
+file, `SHA256SUMS`, into `/hacsfiles/ha_card_bubble/`; the dashboard resource
+pointed at a `bubble-card.js` that did not exist, and every Bubble card showed
+"Configuration error". Earlier verification served `dist/` directly and never went
+through a HACS download, so it could not catch this.
+
+Releases now have no assets, as upstream's do. The `SHA256SUMS` list of every file
+in `dist/` goes into the release notes, and the Release workflow fails if the
+release ends up with any asset. The `SHA256SUMS` asset was removed from
+v2026.10.11.1 and v2026.10.11.2 and their checksums moved into the notes, so a
+HACS "Redownload" of v2026.10.11.2 installs the full folder.
