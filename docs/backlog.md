@@ -25,6 +25,21 @@ calendar (2), and one horizontal-buttons-stack; no cover, climate, or select; no
 | `ha-entity-picker` reads `hass` from Lit context since frontend#52833 | Upstream #2639 (maintainer could not reproduce); `editor/bubble-card-editor.js`, `modules/module-editor.js` | Entity field can be missing in the editor. Root cause is a hypothesis | Fall back to `ha-selector` with an entity selector |
 | `mwc-icon-button`, `mwc-button` no longer registered | `sub-button/editor/sectioned.js`, `sub-button/editor/utils.js`, `modules/editor.js`, `modules/store.js` | Unstyled buttons in the editor; clicks work | `ha-icon-button`, `ha-button` |
 
+### Slated for the 2026.11 beta (do not start before it)
+
+Neither change is in any released frontend as of 2026-10-11: 20260930.2
+(core 2026.10.0) and 20260930.3 (core 2026.10.1) still have the old behaviour,
+checked against the frontend source at those tags. Both arrive with the
+2026.11 beta. Work starts against a `ghcr.io/home-assistant/home-assistant:dev`
+container or the first 2026.11 beta, because the current install cannot show
+the new behaviour. Any fix must detect which frontend it runs on and stay inert
+on 2026.10.
+
+| Item | Evidence | Effect on 2026.11 | Planned fix |
+|---|---|---|---|
+| `hui-section` no longer handles `ll-create-card`, `ll-edit-card`, `ll-copy-card`; `hui-view` handles them with generic paths, and `hui-section` drops `index`/`viewIndex` for `path` | home-assistant/frontend#54207, merged 2026-10-07. At 20260930.2 the handlers are in `sections/hui-section.ts` (about lines 320-395); on `dev` that file has none and `views/hui-view.ts` registers them | Editor only: Add, Edit, and Copy of cards inside a standalone pop-up silently do nothing, because Bubble dispatches these events at a hidden proxy `hui-section` (`src/editor/bubble-card-editor.js` around 2984-3036 and 3110-3150, `src/cards/pop-up/cards/editor/helpers.js` around 66-115). The capture-phase `show-dialog` / `dialog-closed` listeners Bubble adds for those flows are then never removed and can redirect the next real card editor. Dashboards are unaffected | New fork file (`src/fork/lovelace-proxy-compat.js`): when the loaded `hui-section` has no `viewIndex` property, forward the three events to a hidden proxy `hui-view` with paths `['views', 0, 'sections', 0, 'cards', i]` (or `[..., 'cards']` for create), and remove the dialog listeners on a timeout as a safety net. Size M |
+| New drag control `ha-control-scrubber` (light hue scrubber) is not in Bubble's swipe-lock list | home-assistant/frontend#54219 | Swiping the scrubber inside a pop-up may drag-close the pop-up. Unverified | Add `'ha-control-scrubber'` to `SWIPE_LOCKED_TAGS` in `src/cards/pop-up/slide-to-close.js`; check on a phone with a light-colour tile feature in a pop-up. Size XS |
+
 ## 2. Fixes that affect these dashboards
 
 Upstream labels six open issues "Bug-Fix" (fixed by the maintainer, not yet
