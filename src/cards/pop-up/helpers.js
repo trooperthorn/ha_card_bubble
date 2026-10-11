@@ -9,6 +9,9 @@ import { schedulePopupCardModulePreload } from './cards/preload.js';
 import { invalidateWakeSyncCache } from "./index.js";
 import { HA_CARD_WRAPPER_TAG, isDialogNode, isHaCardWrapper } from '../../tools/ha-boundary.js';
 import { startContentInsetSync } from '../../tools/content-inset.js';
+// Fork patch (ha_card_bubble): namespace import so upstream's test mocks of
+// this module, which predate refreshContentInset, keep working unchanged.
+import * as contentInset from '../../tools/content-inset.js';
 import { runWithInstantSliderWrites } from '../../components/slider/instant-writes.js';
 import { flushDeferredCardUpdates } from '../../tools/deferred-card-updates.js';
 import { holdScrollingEffects } from '../../tools/text-scrolling.js';
@@ -2622,6 +2625,8 @@ function closeAllPopupsExcept(exceptContext) {
 }
 
 export function openPopup(context, instant = false) {
+    // Fork patch (ha_card_bubble, upstream #2641): see refreshContentInset().
+    contentInset.refreshContentInset?.();
     normalizePopupBeforeOpen(context);
 
     if (context.popUp.classList.contains('is-popup-opened')) {
