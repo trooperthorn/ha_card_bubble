@@ -1,6 +1,7 @@
 // Provider for Bubble Card Tools backend (file-based modules)
 
 import jsyaml from 'js-yaml';
+import { loadJsYaml } from '../fork/lazy-js-yaml.js';
 
 const ERROR_RETRY_DELAY_MS = 5000;
 const UNAVAILABLE_RETRY_DELAY_MS = 30000;
@@ -79,6 +80,7 @@ export async function ensureBCTProviderAvailable(hass) {
     try {
       const res = await hass.callWS({ type: 'bubble_card_tools/list_modules' });
       const ok = !!res && Array.isArray(res.files);
+      if (ok) await loadJsYaml(); // fork patch: js-yaml loads on demand
       availabilityCache.checked = true;
       availabilityCache.available = ok;
       availabilityCache.lastChecked = Date.now();

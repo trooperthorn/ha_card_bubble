@@ -21,6 +21,22 @@ const rules = [
   }
 ];
 
+// Fork patch (ha_card_bubble): every `js-yaml` import in src resolves to the
+// on-demand shim, except the shim's own, which reaches the real library and
+// becomes a lazily loaded chunk. See src/fork/lazy-js-yaml.js.
+const lazyYamlShim = path.resolve(__dirname, 'src/fork/lazy-js-yaml.js');
+const lazyYamlPlugin = new webpack.NormalModuleReplacementPlugin(/^js-yaml$/, (resource) => {
+  if (resource.contextInfo?.issuer !== lazyYamlShim) resource.request = lazyYamlShim;
+});
+
+// Fork patch (ha_card_bubble): pop-up/create.js imports the onboarding preview
+// from ./editor.js, which drags every pop-up/button/slider editor into the
+// runtime bundle. Only that importer is redirected; see lazy-popup-onboarding.js.
+const popupCreate = path.resolve(__dirname, 'src/cards/pop-up/create.js');
+const lazyOnboardingPlugin = new webpack.NormalModuleReplacementPlugin(/^\.\/editor\.js$/, (resource) => {
+  if (resource.contextInfo?.issuer === popupCreate) resource.request = path.resolve(__dirname, 'src/fork/lazy-popup-onboarding.js');
+});
+
 const performance = {
   hints: false,
 }
@@ -57,7 +73,7 @@ class EmitTranslationsPlugin {
   }
 }
 
-const plugins = [new EmitTranslationsPlugin()];
+const plugins = [new EmitTranslationsPlugin(), lazyYamlPlugin, lazyOnboardingPlugin];
 
 // Fork patch (ha_card_bubble): emit ES modules so lazily loaded chunks (the
 // editor) are fetched with import() relative to import.meta.url, i.e. next to
