@@ -1,3 +1,5 @@
+> **Fork notice:** this is trooperthorn/ha_card_bubble, a build of Bubble Card with a small set of startup-size patches. Install it *instead of* upstream, never alongside it; see [docs/operations.md](docs/operations.md). Everything below is upstream's README.
+
 # Bubble Card
 
 [<img src="img/translate.svg" width="17" height="17" align="absmiddle" alt="">](i18n/languages.md) **[Read this in your language](i18n/languages.md)** (Français, Deutsch, Español, 简体中文, 日本語... and much more)
