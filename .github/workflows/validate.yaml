@@ -29,8 +29,8 @@ jobs:
       - run: python3 scripts/build_release_artifacts.py --validate-only
 
   dist-in-sync:
-    # HACS installs this card from the dist/ folder of the tagged tree (there is
-    # deliberately no bubble-card.js release asset, see docs/decisions.md), so
+    # HACS installs this card from the dist/ folder of the tagged tree (releases
+    # deliberately have no assets, see docs/decisions.md), so
     # the committed dist is the product. Drift from a fresh build fails CI.
     name: Committed dist matches a fresh build
     runs-on: ubuntu-latest

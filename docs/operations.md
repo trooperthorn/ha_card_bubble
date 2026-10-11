@@ -18,6 +18,15 @@ second file to load throws and whichever loaded first wins.
 
 Dashboards need no changes: cards keep `type: custom:bubble-card`.
 
+Do not open the dashboard between removing upstream and finishing the download.
+Home Assistant serves `/hacsfiles` 404 responses with the same 31-day
+`Cache-Control` as real files (`http/static.py` sets the header before the file is
+opened), so a browser that requests `bubble-card.js` while it is missing caches the
+"not found" for that exact URL, and every Bubble card shows "Configuration error"
+even after the file arrives. If that happens, change the resource URL once (for
+example append `&v=2` under Settings -> Dashboards -> Resources); every client then
+requests a new URL. Seen on 2026-10-11 during the first switch.
+
 ## Bubble Card Tools
 
 Install [Clooos/Bubble-Card-Tools](https://github.com/Clooos/Bubble-Card-Tools)
@@ -46,8 +55,10 @@ into `www/` (ignored). Commit the whole `dist/` folder; CI rejects drift.
 
 A merge to `main` is the only release path. `Release` reads the version from
 `package.json` through `.release.json`, checks that a fresh build reproduces the
-committed `dist/`, tags the commit `v<version>`, and publishes a release with a
-`SHA256SUMS` asset. `Prepare release` then opens a CalVer bump PR when release
+committed `dist/`, tags the commit `v<version>`, and publishes a release with **no
+assets**; the checksums of every file in `dist/` are in the release notes. HACS
+installs the whole `dist/` folder only when the release has no assets at all, so
+never attach a file to a release (`docs/decisions.md`). `Prepare release` then opens a CalVer bump PR when release
 paths changed since the last tag; it needs the release GitHub App (repository
 variable `RELEASE_AUTOMATION_CLIENT_ID`, secret `RELEASE_AUTOMATION_PRIVATE_KEY`).
 Without them it fails at its credential check, and a bump can be made by hand:

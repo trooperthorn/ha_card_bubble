@@ -74,11 +74,12 @@ jobs:
           git diff --exit-code -- dist
           test -z "$(git status --porcelain -- dist)"
 
-      # HACS installs from release assets only when one is named after the
-      # hacs.json filename (bubble-card.js). This card ships many files (locale
-      # dictionaries, lazily loaded chunks), so no such asset is uploaded and
-      # HACS downloads the whole dist/ folder of the tag instead. SHA256SUMS
-      # lists every shipped file for verification.
+      # The card installs from the dist/ folder of the tag. HACS downloads only
+      # the release assets whenever a tagged release has any assets at all
+      # (should_try_releases / gather_files_to_download in HACS), so this
+      # release must have none, exactly like upstream's. The checksums of
+      # every shipped file go into the release notes instead. See
+      # docs/decisions.md, 2026-10-11 "releases have no assets".
       - name: Stage immutable tag and draft release
         if: steps.version.outputs.publish == 'true'
         env:
@@ -101,8 +102,19 @@ jobs:
             gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
               --title "$TAG" --generate-notes --verify-tag --draft
           fi
-          (cd dist && find . -maxdepth 1 -type f -printf '%f\n' | LC_ALL=C sort | xargs sha256sum) > SHA256SUMS
-          gh release upload "$TAG" SHA256SUMS --repo "$GITHUB_REPOSITORY" --clobber
+          SUMS="$(cd dist && find . -maxdepth 1 -type f -printf '%f\n' | LC_ALL=C sort | xargs sha256sum)"
+          gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json body --jq .body > notes.md
+          {
+            printf '\n\n### SHA256SUMS (files in `dist/` at this tag)\n\n'
+            printf 'The card installs from the `dist/` folder, so this release deliberately has no assets: HACS downloads only the assets when a release has any.\n\n'
+            printf '```\n%s\n```\n' "$SUMS"
+          } >> notes.md
+          gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --notes-file notes.md
+          ASSETS="$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets | length')"
+          if [ "$ASSETS" != "0" ]; then
+            echo "::error::Release $TAG has $ASSETS asset(s); HACS would install only those instead of dist/."
+            exit 1
+          fi
 
       - name: Publish and lock the release
         if: steps.version.outputs.publish == 'true'
