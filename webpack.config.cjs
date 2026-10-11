@@ -8,6 +8,14 @@ const rules = [
   {
      test: /\.css/,
      type: 'asset/source',
+  },
+  // Fork patch (ha_card_bubble): rename the removed ha-formfield element to the
+  // fork's bubble-formfield in the bundle; see build/formfield-loader.cjs.
+  {
+    test: /\.(js|css)$/,
+    include: path.resolve(__dirname, 'src'),
+    exclude: path.resolve(__dirname, 'src/fork/bubble-formfield.js'),
+    use: [require.resolve('./build/formfield-loader.cjs')],
   }
 ];
 
@@ -79,6 +87,11 @@ module.exports = [
     experiments,
     output: {
       ...forkModuleOutput,
+      // Fork patch: drop chunks from earlier builds (their names carry a
+      // content hash). bubble-pop-up-fix.js is committed by upstream, not built.
+      // Only the production build cleans; the dev build writes into HA_PATH,
+      // a folder shared with other cards.
+      clean: { keep: /^bubble-pop-up-fix\.js$/ },
       path: path.resolve(__dirname, 'dist'),
       filename: '[name].js'
     }
