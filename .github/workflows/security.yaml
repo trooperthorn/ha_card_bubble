@@ -24,6 +24,7 @@ jobs:
         with:
           languages: javascript-typescript
           build-mode: none
+          config-file: ./.github/codeql/codeql-config.yml
       - uses: github/codeql-action/analyze@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9, resolved 2026-09-08
 
   npm-audit:
@@ -36,4 +37,6 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm audit --audit-level=moderate
+      # Only runtime dependencies (lit, js-yaml) are bundled into what clients
+      # load; dev tooling belongs to upstream's lockfile. See docs/decisions.md.
+      - run: npm audit --omit=dev --audit-level=moderate

@@ -1,0 +1,5 @@
+# dist/ is webpack output built from src/; analyzing it duplicates every
+# source finding at an unreadable minified location. See docs/decisions.md.
+paths-ignore:
+  - dist
+  - node_modules

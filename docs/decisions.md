@@ -99,3 +99,21 @@ Rejected: carrying all of #2613 at once. It also defers js-yaml and most of the
 English dictionary, but it was written against v3.3.0, conflicts with v3.4.1,
 and touches about 20 files; the editor split alone is most of its saving in
 three upstream files.
+
+## 2026-10-11: CodeQL scans src, npm audit covers runtime dependencies
+
+CodeQL analyzed the committed `dist/` files too, so moving the editor into its own
+chunk raised five "new" alerts that were the same upstream editor code already in
+`bubble-card.js`, at minified locations nobody can review. CodeQL now ignores
+`dist/` and `node_modules/` (`.github/codeql/codeql-config.yml`) and reports on
+`src/`, where findings point at readable code. Findings in upstream code are
+triaged in `docs/backlog.md` rather than patched blindly, since every fork change
+is carried across upstream syncs.
+
+`npm audit` runs with `--omit=dev`. The only runtime dependencies, `lit` and
+`js-yaml`, are what ships in the bundle; the moderate advisories it reported on
+2026-10-11 were in `@babel/core` (under `jest-snapshot`) and
+`baseline-browser-mapping`, test and build tooling in upstream's lockfile that
+never reaches a client. Bumping them here would put the lockfile in conflict with
+every upstream sync. They still run in CI, so they remain a supply-chain exposure
+of the build itself; that is accepted and revisited when upstream updates them.
