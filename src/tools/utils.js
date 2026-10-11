@@ -23,7 +23,20 @@ export const fireEvent = (node, type, detail, options) => {
     return event;
 };
 
+// Fork patch (ha_card_bubble, upstream #2643, fixed upstream but unreleased at
+// v3.4.1): honour the Vibrate option of the Home Assistant user profile. The
+// browser path already ignores haptic events when it is off, but the Companion
+// app forwards every one to native haptics. Drop at the next upstream sync.
+const vibrateDisabled = () => {
+    try {
+        return document.querySelector('home-assistant')?.hass?.vibrate === false;
+    } catch (_) {
+        return false;
+    }
+};
+
 export const forwardHaptic = hapticType => {
+    if (vibrateDisabled()) return;
     fireEvent(window, "haptic", hapticType)
 }
 
