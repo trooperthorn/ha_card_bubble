@@ -33,10 +33,10 @@ those only as single-file commits that can be dropped at the next sync.
 
 | Item | Source | Root cause | Effort |
 |---|---|---|---|
-| Pop-up content inset not re-measured when the sidebar hides | #2641 (Bug-Fix) | `tools/content-inset.js` re-measures only from a ResizeObserver on the panel; a change that does not resize the observed box never re-publishes. Read from code, not reproduced | S |
-| Haptics always fire | #2643 (Bug-Fix) | `forwardHaptic` in `tools/utils.js` ignores `hass.vibrate` | XS |
-| Tap-to-slide shows no value while sliding | #2543, PR #2623 (draft, mergeable, tested) | The tap branch never sets up the value display; all 4 sliders here use `tap_to_slide` | XS, cherry-pick |
-| Calendar keeps removed cards alive up to 15 minutes | not filed upstream | `cards/calendar/index.js` starts a new 15-minute `setTimeout` holding the card on every calendar state change and never clears the previous one; it also `JSON.stringify`s every calendar's state on each render | XS |
+| **Done**: pop-up content inset not re-measured when the sidebar hides | #2641 (Bug-Fix) | `tools/content-inset.js` re-measures only from a ResizeObserver on the panel; a change that does not resize the observed box never re-publishes. Read from code, not reproduced | S |
+| **Done**: haptics always fire | #2643 (Bug-Fix) | `forwardHaptic` in `tools/utils.js` ignores `hass.vibrate` | XS |
+| **Done** (PR carried with a test mock fix): tap-to-slide shows no value while sliding | #2543, PR #2623 (draft, mergeable, tested) | The tap branch never sets up the value display; all 4 sliders here use `tap_to_slide` | XS, cherry-pick |
+| **Done**: calendar keeps removed cards alive up to 15 minutes | not filed upstream | `cards/calendar/index.js` starts a new 15-minute `setTimeout` holding the card on every calendar state change and never clears the previous one; it also `JSON.stringify`s every calendar's state on each render | XS |
 
 ## 3. Startup size
 
@@ -49,7 +49,7 @@ the deltas are the useful numbers.
 | Editor loaded on demand | -341 KB | -67 KB | low | yes; **done** (`decisions.md`) |
 | Onboarding and migration notice split out of runtime (`pop-up/create.js` imports `pop-up/editor.js`; `migration.js` imports `standalone-dialog-bridge`) | -95 KB | -18 KB | medium, `pop-up/editor.js` changes often | yes |
 | js-yaml loaded on first use (every call site is already async) | -43 KB | -14 KB | low to medium | yes |
-| CSS minified at build time (lightningcss in a webpack loader) | -56 KB | -13 KB | very low, build only | no |
+| **Done** (`decisions.md`, conservative, no dependency: -41 KB raw, -12 KB gzip): CSS minified at build time (lightningcss in a webpack loader) | -56 KB | -13 KB | very low, build only | no |
 | calendar, media-player, climate, cover, select handlers loaded on first use | -48 KB | -11 KB | low to medium | no |
 | English dictionary sliced to runtime keys, rest fetched | about -32 KB | about -12 KB | high: `en.json` changes every release | yes |
 

@@ -8,6 +8,8 @@ const rules = [
   {
      test: /\.css/,
      type: 'asset/source',
+     // Fork patch (ha_card_bubble): see build/css-minify-loader.cjs.
+     use: [require.resolve('./build/css-minify-loader.cjs')],
   },
   // Fork patch (ha_card_bubble): rename the removed ha-formfield element to the
   // fork's bubble-formfield in the bundle; see build/formfield-loader.cjs.

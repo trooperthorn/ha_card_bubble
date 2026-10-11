@@ -153,3 +153,29 @@ against the built `dist/`: `bubble-formfield` registered with `ha-formfield`
 absent, attribute and property labels render, a label click toggles the
 control, and a separate label element stays on the control's row. Not yet
 verified inside the real editor on Home Assistant 2026.11.
+
+## 2026-10-11: stylesheets are minified at build time, conservatively
+
+Webpack inlines the 19 stylesheets under `src/` as raw strings (169,291 bytes of
+source), so their comments and indentation shipped to every client.
+`build/css-minify-loader.cjs` drops comments and collapses whitespace, and
+removes it entirely only next to `{`, `}`, and `;`. It copies quoted strings and
+backslash escapes untouched and never rewrites values or merges rules.
+
+A first version also removed the space after commas. Parsing every stylesheet
+before and after in a browser showed that this changed the text of `var()`
+fallbacks and custom property values, which browsers keep as written (for
+example `--rgb-primary-color: 3, 169, 244` became `3,169,244`); anything that
+reads such a value as a string would have seen it change, so commas keep their
+spacing. With that, all 826 rules in the 19 files serialize identically before
+and after, once runs of whitespace are treated as one space (two multi-line
+`var()` and `linear-gradient()` values differ only in collapsed indentation).
+
+| File | Before | After | gzip before | gzip after |
+|---|---|---|---|---|
+| `bubble-card.js` | 738,369 | 696,988 | 192,803 | 180,977 |
+| editor chunk | 339,870 | 332,576 | 70,219 | 69,418 |
+
+Rejected: lightningcss or csso, which the research measured at about 14 KB more
+raw saving. Either is a dependency in upstream's `package.json` and lockfile, and
+every upstream sync would conflict on them.
