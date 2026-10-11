@@ -18,7 +18,7 @@ import { beginTemplateRender, sweepTemplates, releaseTemplates, refreshTemplateS
 import { maybeShowMigrationNotice } from './cards/pop-up/migration.js';
 import { registerForIconRefresh, unregisterForIconRefresh } from './tools/icon.js';
 import { monotonicNow } from './tools/monotonic-time.js';
-import BubbleCardEditor from './editor/bubble-card-editor.js';
+import { loadBubbleCardEditor } from './editor/load-editor.js';
 
 import { cleanupPopUp, handlePopUp } from './cards/pop-up/index.js';
 import { handleButton } from './cards/button/index.js';
@@ -588,7 +588,8 @@ class BubbleCard extends HTMLElement {
     };
   }
 
-  static getConfigElement() {
+  static async getConfigElement() {
+    await loadBubbleCardEditor();
     return document.createElement("bubble-card-editor");
   }
 

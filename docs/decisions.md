@@ -57,3 +57,45 @@ dist-in-sync check depends on.
 would conflict on every upstream sync and drift the build from upstream's, so npm updates
 arrive with upstream releases. The fork's own workflow actions are pinned by SHA
 and kept current by Dependabot.
+
+## 2026-10-11: the editor loads on demand
+
+`src/bubble-card.js` imported the visual editor at the top of the file, only for
+its side effect of registering `bubble-card-editor`, so every client parsed the
+editor, the module store, and the module editor at startup. The import now
+happens inside `getConfigElement()`, through a shared loader in
+`src/editor/load-editor.js`. Home Assistant awaits an async `getConfigElement()`
+(`hui-element-editor.ts` in home-assistant/frontend), and Mushroom uses the same
+pattern. Measured with `npm run dist`:
+
+| File | Raw bytes | gzip -9 |
+|---|---|---|
+| `bubble-card.js` at upstream v3.4.1 | 1,073,092 | 259,325 |
+| `bubble-card.js` with this patch | 736,165 | 192,158 |
+| `bubble-card-chunk-editor.<hash>.js` (loaded when an editor opens) | 339,575 | 70,228 |
+
+The nested-card actions inside a pop-up in dashboard edit mode
+(`src/cards/pop-up/cards/editor/helpers.js`) create a transient
+`bubble-card-editor` bridge and gave up with a console warning when the element
+was not registered. They now load the editor once and retry. When an opener
+already exists they still open synchronously, so upstream's tests for that
+path pass unchanged; `helpers.lazy-editor.test.js` covers the new path.
+
+Webpack now emits ES modules (`output.module`), so the chunk is fetched with
+`import()` relative to the entry's own URL, which is `/hacsfiles/<repo>/`; the
+dashboard already loads the resource as `type: module`. Chunk names carry a
+content hash, because Home Assistant serves `/hacsfiles` with a 31-day cache and
+`?hacstag` only busts the entry file. Upstream PR #2613 names chunks by the
+upstream version instead, which would go stale here: a fork patch can change a
+chunk without upstream's version changing.
+
+Verified in a browser against the built `dist/` served from
+`/hacsfiles/ha_card_bubble/`: at load only `bubble-card` is registered;
+`getConfigElement()` fetched the chunk from the same folder, registered
+`bubble-card-editor`, and returned the editor element, with no console errors.
+Not yet verified on a live Home Assistant dashboard.
+
+Rejected: carrying all of #2613 at once. It also defers js-yaml and most of the
+English dictionary, but it was written against v3.3.0, conflicts with v3.4.1,
+and touches about 20 files; the editor split alone is most of its saving in
+three upstream files.
