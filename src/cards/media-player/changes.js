@@ -6,6 +6,7 @@ import {
     setLayout
 } from '../../tools/utils.js';
 import { applyScrollingEffect } from '../../tools/text-scrolling.js';
+import { escapeText } from '../../fork/escape-text.js';
 import { updateContentContainerFixedClass } from '../../components/base-card/changes.js';
 import { computePlaybackControl, getMediaControlsSupport, hasMediaControl, computeMediaDescription } from './helpers.js';
 import { getIcon, getImage, getIconColor } from '../../tools/icon.js';
@@ -153,8 +154,10 @@ export function changeMediaInfo(context) {
 
     // Always call applyScrollingEffect, it handles its own optimization
     // and can detect when element needs animation restart after reconnection
-    applyScrollingEffect(context, context.elements.title, title);
-    applyScrollingEffect(context, context.elements.artist, artist);
+    // Fork patch (ha_card_bubble): media metadata comes from the stream; see
+    // fork/escape-text.js.
+    applyScrollingEffect(context, context.elements.title, escapeText(title));
+    applyScrollingEffect(context, context.elements.artist, escapeText(artist));
 }
 
 export function changeDisplayedInfo(context) {

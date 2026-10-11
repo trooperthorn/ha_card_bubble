@@ -199,3 +199,34 @@ in `dist/` goes into the release notes, and the Release workflow fails if the
 release ends up with any asset. The `SHA256SUMS` asset was removed from
 v2026.10.11.1 and v2026.10.11.2 and their checksums moved into the notes, so a
 HACS "Redownload" of v2026.10.11.2 installs the full folder.
+
+## 2026-10-11: entity text is escaped before the scrolling text writes it
+
+`tools/text-scrolling.js` writes every name, state line, media title, and
+calendar event through `setHtml()`, which assigns `innerHTML`. Upstream already
+escapes template results there (`resolveTemplate(..., html = true)`, with the
+comment that a rendered value "is entity data rather than something the
+dashboard author typed"), but raw entity text took the same path unescaped:
+`getName()`'s `friendly_name`, the sub-button `friendly_name` fallback, every
+state and attribute in `renderStateLine()`, media `media_title` and the
+description built from media attributes, and calendar `summary` and `location`.
+That text comes from integrations and can carry third-party content (stream
+metadata, calendar invites, device names). Markup in it was parsed, and
+`innerHTML` runs event-handler attributes even though it skips `<script>`, so
+it was a script injection path into the dashboard with the viewer's session.
+CodeQL flagged the sink (`js/xss-through-dom`, `text-scrolling.js:41`); the
+separator alert at `separator/create.js:16` is a false positive, since the
+separator title is written with `innerText`.
+
+`src/fork/escape-text.js` escapes `&`, `<`, and `>` (the same replacements as
+upstream's `escapeHtml`, kept local so upstream's test mocks of `jinja.js` still
+link) at those entry points only. Author-written `name:` values keep their markup
+and template results are not escaped twice, so dashboards that put HTML in a
+`name:` render as before. Covered by 13 fork tests across the four paths; 7 of
+them fail on the unpatched code.
+
+Rejected: escaping inside `setHtml()` itself, which would double-escape template
+results and strip intentional author markup; and rewriting text-scrolling to
+build text nodes, which is the better structural fix but a large edit to an
+upstream file that changes often. That belongs upstream; a draft report is in
+`docs/backlog.md`.

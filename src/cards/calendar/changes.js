@@ -1,5 +1,6 @@
 import { createElement, setLayout, isDocumentRTL } from "../../tools/utils.js";
 import { applyScrollingEffect } from "../../tools/text-scrolling.js";
+import { escapeText } from "../../fork/escape-text.js";
 import { handleCustomStyles } from '../../tools/style-processor.js';
 import setupTranslation from "../../tools/localize.js";
 import { addActions } from "../../tools/tap-actions.js";
@@ -157,7 +158,9 @@ export async function changeEvents(context) {
       const eventName = createElement('div', 'bubble-event-name');
 
       const eventText = event.summary || t("cards.calendar.busy");
-      applyScrollingEffect(context, eventName, eventText);
+      // Fork patch (ha_card_bubble): event text can come from outside invites;
+      // see fork/escape-text.js.
+      applyScrollingEffect(context, eventName, escapeText(eventText));
       eventNameWrapper.appendChild(eventName);
 
       const eventColor = createElement('div', 'bubble-event-color');
@@ -172,7 +175,7 @@ export async function changeEvents(context) {
 
       if (context.config.show_place === true && event.location) {
         const eventPlace = createElement('div', 'bubble-event-place');
-        applyScrollingEffect(context, eventPlace, event.location);
+        applyScrollingEffect(context, eventPlace, escapeText(event.location));
         eventNameWrapper.appendChild(eventPlace);
       }
 

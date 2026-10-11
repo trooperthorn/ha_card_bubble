@@ -5,6 +5,7 @@ import { adjustColor, areColorsSimilar, calculateLuminance, hexToRgb, rgbStringT
 import { resolveTemplate } from "./render-template.js";
 import { isTemplate } from "./jinja.js";
 import { resolveLovelaceRoot } from "./ha-boundary.js";
+import { escapeText } from "../fork/escape-text.js";
 
 // Kept re-exported: the color primitives moved to their own leaf module, every
 // existing import of them still points here
@@ -386,7 +387,8 @@ export function getName(context, html = false) {
     if (configName) return configName;
 
     const entityName = getAttribute(context, "friendly_name");
-    if (entityName) return entityName;
+    // Fork patch (ha_card_bubble): see fork/escape-text.js.
+    if (entityName) return html ? escapeText(entityName) : entityName;
 
     return '';
 }
