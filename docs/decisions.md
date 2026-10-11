@@ -230,3 +230,81 @@ results and strip intentional author markup; and rewriting text-scrolling to
 build text nodes, which is the better structural fix but a large edit to an
 upstream file that changes often. That belongs upstream; a draft report is in
 `docs/backlog.md`.
+
+## 2026-10-11: closed pop-ups and clock-driven cards skip unrelated updates
+
+Measured in headless Chrome on a synthetic dashboard shaped like Sean's (114
+cards: 35 closed standalone pop-ups, 47 separators, 26 buttons, 2 calendars,
+3 media players, 1 horizontal stack), 120 unrelated state changes after the
+render gate's 10 s settle window, CPU throttled 6x to stand in for the Android
+WebView tablets. Bubble's own work per update:
+
+| Build | Mean | Median | Main-thread task per update |
+|---|---|---|---|
+| `main` before this change | 9.03 ms | 7.6 ms | 11.1 ms |
+| With both skips | 4.64 ms | 2.6 ms | 6.7 ms |
+
+**Closed pop-ups** (`src/fork/closed-popup-gate.js`, one line in
+`tools/render-gate.js`). Upstream never lets the render gate skip a pop-up, so
+each closed standalone pop-up re-ran its full `handlePopUp` pass on every state
+change in the house: about 3.4 ms of the 9 at 6x. A closed pop-up's shell is
+detached and its child cards are torn down, and everything that can open it
+(its hash through the global URL listener, a DOM move, a template result) runs
+outside the hass tick. The one exception is `trigger` / `trigger_entity`, and
+those pop-ups, like any with `background_update`, are never skipped. A skip sets
+`_standaloneNeedsShellRefresh`, which upstream's open path already honours, so
+the first render on open uses the current state; the benchmark's freshness check
+(change the header entity while closed, reopen) shows the new state. As with the
+render gate itself, no pop-up skips for more than 30 s.
+
+**Clock-driven cards** (`src/fork/clock-render-throttle.js`, one line in
+`bubble-card.js`). Media players, calendars, and timers are exempt from the
+render gate because what they show can move with the clock while their state
+objects stay the same, so they rendered on every state change in the house.
+The clock only needs sampling: a tick is dropped when the card rendered less
+than a second ago and nothing it reads changed (its gate entities, its template
+reads, and a calendar's `entities:` list); any doubt renders. Timers keep their
+own countdown interval, and the media-player card shows no position bar, so
+nothing visible lags.
+
+## 2026-10-11: js-yaml and the pop-up onboarding load on demand
+
+Two runtime imports pulled editor-only code into `bubble-card.js`:
+
+- `js-yaml` (about 41 KB) is only needed to read module files (Bubble Card Tools,
+  `/local/bubble/bubble-modules.yaml`) and in the editor. Every `js-yaml` import
+  now resolves to `src/fork/lazy-js-yaml.js` at build time (a webpack
+  `NormalModuleReplacementPlugin`), which loads the library as its own chunk.
+  The paths that parse YAML await it first: the editor loader, the Bubble Card
+  Tools availability check (which gates every Tools read and the legacy-module
+  migration), and `loadYAML` before it parses. Upstream's tests import the real
+  library and are unaffected; the shim refuses to parse before loading with a
+  clear error, which `lazy-js-yaml.test.js` covers.
+- `cards/pop-up/create.js` imported the onboarding preview from
+  `cards/pop-up/editor.js`, dragging every pop-up, button, and slider editor into
+  the runtime (about 74 KB). That one import is redirected at build time to
+  `src/fork/lazy-popup-onboarding.js`, which renders it through Lit's `until()`
+  from the editor chunk. The preview only appears in the editor for a pop-up
+  that has no hash yet.
+
+| File | Before | After | gzip before | gzip after |
+|---|---|---|---|---|
+| `bubble-card.js` | 696,988 | 585,318 | 180,977 | 156,871 |
+| editor chunk | 332,576 | 406,479 | 69,418 | 80,365 |
+| js-yaml chunk | (in the bundle) | 43,336 | | 14,256 |
+
+Verified in a browser against the built `dist/`: only `bubble-card.js` loads at
+startup; opening an editor fetches the editor and js-yaml chunks; no console
+errors. No upstream file is edited for the onboarding split; js-yaml needs one
+`await` in each of `modules/registry.js` and `modules/bct-provider.js`.
+
+## 2026-10-11: mwc-button and mwc-icon-button are renamed at build time
+
+The frontend no longer registers `mwc-button` or `mwc-icon-button` (absent at
+20260930.2), so the module store's retry button and three dropdown triggers in
+the editors rendered as plain unstyled elements that keyboard users could not
+reach. The rename loader that already handles `ha-formfield`
+(`build/formfield-loader.cjs`) now also maps them to `ha-button` and
+`ha-icon-button`; Bubble puts the label or icon in their default slot, which
+both render (`ha-icon-button` does when it has no `path`). CI fails if any of the
+three old names reaches `dist/`.
